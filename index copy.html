@@ -1,0 +1,62 @@
+<html>
+
+<script>
+class NeuronLayer0{
+    constructor(inputs, neurons){
+        return [...[...Array(inputs)].map( (_, num) => [...[...Array(neurons)].map(i =>   2 * Math.random(inputs, neurons) - 1  )] )]         
+    }    
+}
+class NeuronLayer1{
+    constructor(number_of_inputs_per_neuron, number_of_neurons){
+        this.neuron = []  
+        this.set(number_of_inputs_per_neuron, number_of_neurons)
+        return this.neuron;     
+    }    
+    set(number_of_inputs_per_neuron, number_of_neurons){
+        for (let i = 0; i<= number_of_inputs_per_neuron; i++){
+            this.neuron[i] = []
+            for (let j = 0; j<= number_of_neurons; j++){
+                var tmp = 2 * Math.random(number_of_inputs_per_neuron, number_of_neurons) - 1
+                this.neuron[i].push(tmp)
+            }
+        }     
+    }
+}
+class NeuralNetwork{
+    constructor(layer1, layer2){
+        this.layer1 = layer1
+        this.layer2 = layer2
+    }
+    activate(arr1, arr2){
+        for (let i = 0; i<= arr1.length; i++){
+            for (let j = 0; j<= arr2.length; j++){
+                var tmp = arr1[i][j]+arr2[i][j]
+                arr1[i][j] = 1/(1+Math.pow(Math.E, -tmp));
+            }
+        }  
+        return arr1;   
+    }    
+    sigmoid(arr1, arr2) {
+        return this.activate(arr1, arr2);
+    }    
+    run(inputs, weights1, weights2){
+        output_from_layer1 = this.sigmoid( inputs, weights1 )
+        output_from_layer2 = this.sigmoid( output_from_layer1, weights2 )
+        return output_from_layer1, output_from_layer2
+    }
+}  
+
+
+var Neuron1 = new NeuronLayer0(5,6);
+var Neuron2 = new NeuronLayer0(5,6);
+
+let tmp1 = Neuron1
+tmp1[0][0] = 99
+console.log(Neuron1, tmp1);//, Neuron2)
+
+
+let tmp2 = Neuron2.map( (_, num) => (num == 0) ? 99 : Neuron2[num])
+console.log(Neuron2, tmp2);//, Neuron2)
+</script>
+
+</html>

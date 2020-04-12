@@ -1,0 +1,154 @@
+<html>
+
+<script>
+class NeuronLayer{
+    constructor(inputs, neurons){
+        return [...[...Array(inputs)].map( (_, num) => [...[...Array(neurons)].map(i =>   2 * Math.random(inputs, neurons) - 1  )] ), 1]         
+    }    
+}
+class NeuralNetwork{
+    constructor(id=0,bias=1,learningRate=0.1,weights=[]) {
+    this.bias = bias;
+    this.learningRate = learningRate;
+    this.weights = weights;
+    this.trainingSet = [];
+    this.status = 0;
+    this.id = id
+  }
+  init(inputs,bias=this.bias) {
+    // Initialize weights to 0 and adding bias weight
+    this.weights = [...inputs.map(i => Math.random()), bias];
+  }
+  train(inputs,expected) {
+     //console.log('train',inputs,expected)
+    if (!this.weights.length) this.init(inputs);
+    if (inputs.length != this.weights.length) inputs.push(1); // Adding the bias
+
+    // Keeping this in the training set if it didn't exist
+    if (!this.trainingSet.find(t => t.inputs.every((inp,i) => inp === inputs[i]))) this.trainingSet.push({inputs,expected});
+    
+    //console.log('trainingSet',this.trainingSet)
+    const actual = this.evaluate(inputs);
+    //console.log('actual',actual, expected)
+
+    if (actual == expected) return true; // Correct weights return and don't touch anything.
+
+    // Otherwise update each weight by adding the error * learningRate relative to the input
+    this.weights = this.weights.map((w,i) => w += this.delta(actual, expected,inputs[i]));
+    return this.weights;
+  }
+  // Calculates the difference between actual and expected for a given input
+  delta(actual, expected, input,learningRate=this.learningRate) {
+    const error = expected - actual; // How far off were we
+    return error * learningRate * input;
+  }
+  // Iterates until the weights are correctly set
+  learn(iterationCallback=()=>{},trainingSet=this.trainingSet) {
+    let success = false;
+    while (!success) {
+      // Function of your choosing that will be called after an iteration has completed
+      iterationCallback.call(this);
+      success = trainingSet.every(t => this.train(t.inputs,t.expected) === true);
+    }
+  }
+  // Sum inputs * weights
+  weightedSum(inputs=this.inputs,weights=this.weights) {
+    //console.log('weightedSum',inputs, weights)
+    return inputs.map((inp,i) => inp * weights[i]).reduce((x,y) => x+y,0);
+  }
+
+  // Evaluate using the current weights
+  evaluate(inputs, debug=0) {
+    return this.activate(this.weightedSum(inputs), debug);
+  }
+
+  // Sugar syntax evaluate with added bias input
+  predict(inputs) {
+    //console.log('predict',inputs)
+    return this.evaluate(inputs, 1);
+  }
+
+  // Heaviside as the activation function
+  activate(value, debug) {
+    if(debug == 1)console.log('activate',this.id,value.toFixed(2))  
+    return value.toFixed(2) > 0 ? 1 : 0;
+  }  
+  
+  getWeights(){
+      return this.weights;
+  } 
+
+}  
+
+class oRun{
+    constructor(){
+    }
+    normalize(dataSet, axis){
+        let normalized = []
+        dataSet.map( (i) => {  i.a = i.a/axis; i.b = i.b/axis; i.c = i.c/axis; i.d = i.d/axis; i.e = i.e/axis; } )
+        return dataSet
+    }
+    convert(data, bias){
+        return  data.map( i => [i.a,i.b,i.c,i.d,i.e] )
+    }
+    initialize(dataSet, rnn){
+        dataSet.map( (i) => {
+            rnn.train([i.a,i.b,i.c,i.d,i.e] , i.bias);            
+        }) 
+        return rnn; 
+    }
+}
+
+var run = new oRun()
+var dataSet0 = [
+        // pegajoso(1/0), camuflado(1/0), prezas(1/0), altura/comprimento(cm), peso(kg)
+        { a:0, b:1, c:0, d:20, e:1, bias:0}, //galinha
+        { a:0, b:1, c:0, d:15, e:1, bias:0}, //passaro 
+        { a:0, b:0, c:0, d:30, e:2, bias:0}, //coelho
+        { a:0, b:1, c:0, d:30, e:2, bias:0}, //gato    
+        { a:0, b:0, c:0, d:30, e:2, bias:0}, //pato                                    
+]      
+var dataSet1 = [
+    // pegajoso(1/0), camuflado(1/0), prezas(1/0), altura/comprimento(cm), peso(1/0)
+    { a:1, b:1, c:1, d:150, e:10,  bias:1}, //snake   
+    { a:0, b:1, c:1, d:250, e:100, bias:1}, //Puma
+    { a:0, b:1, c:1, d:500, e:800, bias:1}, //crocodilo
+    { a:0, b:1, c:1, d:250, e:190, bias:1}, //leao
+    { a:0, b:1, c:1, d:260, e:800, bias:1}, //bufalo                 
+]            
+var rnn0 = new NeuralNetwork(0);
+var rnn1 = new NeuralNetwork(1);
+dataSet0  = run.normalize(dataSet0, 100);
+dataSet1  = run.normalize(dataSet1, 100);
+
+rnn0     = run.initialize(dataSet0, rnn0);
+rnn1     = run.initialize(dataSet1, rnn1);
+
+rnn0.learn(() => { 
+    rnn0.status++
+    console.log('rnn0 ok')
+}) 
+rnn1.learn(() => { 
+    rnn1.status++
+    console.log('rnn1 ok')
+}) 
+
+
+var timer = setInterval(() => {
+    if(rnn0.status >= 1 && rnn1.status >= 1){   
+            // pegajoso(1/0), camuflado(1/0), prezas(1/0), altura/comprimento(cm), peso(1/0)
+            var pet =  { a:0, b:0, c:0, d:30, e:2 };//vaca
+
+            var view0 = run.convert( run.normalize( [pet], 100), 1 /*1 pq qro aqueles que nao sao amigaveis*/ ) 
+            var view1 = run.convert( run.normalize( [pet], 100), 1 /*1 pq qro aqueles que sao perigosos*/) 
+            let warning0 = rnn0.predict( view0[0], 1)
+            let warning1 = rnn1.predict( view1[0], 1)
+
+            console.log('warning',warning0, warning1)
+            clearInterval(timer)
+    }
+}, 1000);
+
+</script>
+
+</html>
